@@ -105,7 +105,7 @@ impl Forth {
     fn input_parse(&mut self, input: &str) -> Result<Vec<Item>, Error> {
         let mut items = Vec::new();
         let mut state = ParseState::Normal;
-        let mut curr_custom_word = String::new();
+        let mut curr_custom_word = None;
 
         let input_uppercased = input.to_uppercase();
         let input_separated = to_space_separated(&input_uppercased);
@@ -133,8 +133,9 @@ impl Forth {
                         }
                     }
 
-                    curr_custom_word = item_str.clone().to_owned();
-                    self.word_map.insert(curr_custom_word.clone(), Vec::new());
+                    let custom_word = item_str.to_owned();
+                    curr_custom_word = Some(custom_word.clone());
+                    self.word_map.insert(custom_word, Vec::new());
 
                     state = ParseState::Custom;
                 },
@@ -144,7 +145,7 @@ impl Forth {
 
                     if first_item == &Item::Symbol_(Symbol::SemiColon) {
                         state = ParseState::Normal;
-                    } else if let Some(w) = self.word_map.get_mut(&curr_custom_word.clone()) {
+                    } else if let Some(w) = self.word_map.get_mut(curr_custom_word.as_ref().unwrap()) {
                         w.extend(v.iter().cloned())
                     }
                 },
