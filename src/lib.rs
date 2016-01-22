@@ -216,12 +216,5 @@ fn eval_command(stack: &mut VecDeque<Value>, c: StackWord) -> ForthResult {
 }
 
 fn to_space_separated(s: &str) -> String {
-    let mut space_separated = String::new();
-    for c in s.chars() {
-        match c.is_control() {
-            true  => space_separated.push_str(&" ".to_string()),
-            false => space_separated.push_str(&c.to_string()),
-        }
-    }
-    space_separated
+    s.chars().map(|c| if c.is_control() { ' ' } else { c }).collect()
 }
