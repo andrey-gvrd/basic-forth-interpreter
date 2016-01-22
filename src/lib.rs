@@ -86,7 +86,7 @@ impl Forth {
     pub fn eval(&mut self, input: &str) -> ForthResult {
         match self.input_parse(input) {
             Ok(v) => {
-                for i in v.into_iter() {
+                for i in v {
                     if let Item::Exec_(s) = i {
                         match s {
                             Exec::Arith_(o) => {
