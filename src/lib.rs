@@ -2,7 +2,6 @@
 extern crate lazy_static;
 
 use std::collections::HashMap;
-use std::collections::VecDeque;
 
 pub type Value = i32;
 pub type ForthResult = Result<(), Error>;
@@ -30,25 +29,25 @@ enum Exec {
 }
 
 lazy_static! {
-    static ref WORD_MAP: HashMap<String, VecDeque<Item>> = {
+    static ref WORD_MAP: HashMap<String, Vec<Item>> = {
         let mut m = HashMap::new();
-        m.insert("DUP".to_owned(),  [Item::Exec_(Exec::Stack_(StackWord::Dup))].iter().cloned().collect());
-        m.insert("DROP".to_owned(), [Item::Exec_(Exec::Stack_(StackWord::Drop))].iter().cloned().collect());
-        m.insert("SWAP".to_owned(), [Item::Exec_(Exec::Stack_(StackWord::Swap))].iter().cloned().collect());
-        m.insert("OVER".to_owned(), [Item::Exec_(Exec::Stack_(StackWord::Over))].iter().cloned().collect());
-        m.insert("+".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Add))].iter().cloned().collect());
-        m.insert("-".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Sub))].iter().cloned().collect());
-        m.insert("*".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Mul))].iter().cloned().collect());
-        m.insert("/".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Div))].iter().cloned().collect());
-        m.insert(":".to_owned(),    [Item::Symbol_(Symbol::Colon)].iter().cloned().collect());
-        m.insert(";".to_owned(),    [Item::Symbol_(Symbol::SemiColon)].iter().cloned().collect());
+        m.insert("DUP".to_owned(),  vec![Item::Exec_(Exec::Stack_(StackWord::Dup))]);
+        m.insert("DROP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Drop))]);
+        m.insert("SWAP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Swap))]);
+        m.insert("OVER".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Over))]);
+        m.insert("+".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Add))]);
+        m.insert("-".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Sub))]);
+        m.insert("*".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Mul))]);
+        m.insert("/".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Div))]);
+        m.insert(":".to_owned(),    vec![Item::Symbol_(Symbol::Colon)]);
+        m.insert(";".to_owned(),    vec![Item::Symbol_(Symbol::SemiColon)]);
         m
     };
 }
 
 pub struct Forth {
-    word_map: HashMap<String, VecDeque<Item>>,
-    stack: VecDeque<Value>,
+    word_map: HashMap<String, Vec<Item>>,
+    stack: Vec<Value>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -69,7 +68,7 @@ impl Forth {
     pub fn new() -> Forth {
         Forth {
             word_map: WORD_MAP.clone(),
-            stack: VecDeque::new(),
+            stack: Vec::new(),
         }
     }
 
@@ -89,18 +88,18 @@ impl Forth {
             if let Item::Exec_(s) = i {
                 match s {
                     Exec::Arith_(o) => {
-                        let (a, b) = match (self.stack.pop_back(), self.stack.pop_back()) {
+                        let (a, b) = match (self.stack.pop(), self.stack.pop()) {
                             (Some(a), Some(b)) => (a, b),
                             (_, _) => return Err(Error::StackUnderflow),
                         };
                         let v = try!(eval_oper(a, b, o));
-                        self.stack.push_back(v);
+                        self.stack.push(v);
                     },
                     Exec::Stack_(c) => {
                         try!(eval_command(&mut self.stack, c));
                     },
                     Exec::Value_(v) => {
-                        self.stack.push_back(v);
+                        self.stack.push(v);
                     },
                 }
             }
@@ -108,8 +107,8 @@ impl Forth {
         Ok(())
     }
 
-    fn input_parse(&mut self, input: &str) -> Result<VecDeque<Item>, Error> {
-        let mut items: VecDeque<Item> = VecDeque::new();
+    fn input_parse(&mut self, input: &str) -> Result<Vec<Item>, Error> {
+        let mut items: Vec<Item> = Vec::new();
         let mut state = ParseState::Normal;
         let mut curr_custom_word = String::new();
 
@@ -121,7 +120,7 @@ impl Forth {
             match state {
                 ParseState::Normal => {
                     let v = try!(self.str_to_item(item_str.clone().to_owned()));
-                    let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
+                    let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
                     if first_item == &Item::Symbol_(Symbol::Colon) {
                         state = ParseState::CustomInit;
@@ -132,7 +131,7 @@ impl Forth {
                 ParseState::CustomInit => {
                     // Cannot re-define numbers
                     if let Ok(v) = self.str_to_item(item_str.clone().to_owned()) {
-                        let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
+                        let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
                         if let &Item::Exec_(Exec::Value_(_)) = first_item {
                             return Err(Error::InvalidWord);
@@ -140,13 +139,13 @@ impl Forth {
                     }
 
                     curr_custom_word = item_str.clone().to_owned();
-                    self.word_map.insert(curr_custom_word.clone(), VecDeque::new());
+                    self.word_map.insert(curr_custom_word.clone(), Vec::new());
 
                     state = ParseState::Custom;
                 },
                 ParseState::Custom => {
                     let v = try!(self.str_to_item(item_str.clone().to_owned()));
-                    let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
+                    let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
                     if first_item == &Item::Symbol_(Symbol::SemiColon) {
                         state = ParseState::Normal;
@@ -163,9 +162,9 @@ impl Forth {
         }
     }
 
-    fn str_to_item(&self, s: String) -> Result<VecDeque<Item>, Error> {
+    fn str_to_item(&self, s: String) -> Result<Vec<Item>, Error> {
         match s.parse::<Value>() {
-            Ok(v) => Ok([Item::Exec_(Exec::Value_(v))].iter().cloned().collect()),
+            Ok(v) => Ok(vec![Item::Exec_(Exec::Value_(v))]),
             Err(_) => self.word_map.get(&s.to_uppercase()).cloned().ok_or(Error::UnknownWord),
         }
     }
@@ -185,22 +184,22 @@ fn eval_oper(a: Value, b: Value, o: ArithWord) -> Result<Value, Error> {
     }
 }
 
-fn eval_command(stack: &mut VecDeque<Value>, c: StackWord) -> ForthResult {
+fn eval_command(stack: &mut Vec<Value>, c: StackWord) -> ForthResult {
     match c {
         StackWord::Dup => {
-            let a = try!(stack.back().cloned().ok_or(Error::StackUnderflow));
-            stack.push_back(a);
+            let a = try!(stack.last().cloned().ok_or(Error::StackUnderflow));
+            stack.push(a);
         },
         StackWord::Drop => {
-            if stack.pop_back().is_none() {
+            if stack.pop().is_none() {
                 return Err(Error::StackUnderflow);
             }
         },
         StackWord::Swap => {
-            match (stack.pop_back(), stack.pop_back()) {
+            match (stack.pop(), stack.pop()) {
                 (Some(a), Some(b)) => {
-                    stack.push_back(a);
-                    stack.push_back(b);
+                    stack.push(a);
+                    stack.push(b);
                 },
                 (_, _) => return Err(Error::StackUnderflow),
             }
@@ -209,7 +208,7 @@ fn eval_command(stack: &mut VecDeque<Value>, c: StackWord) -> ForthResult {
             let len = stack.len();
             if len < 2 { return Err(Error::StackUnderflow) };
             let a = try!(stack.get(len - 2).cloned().ok_or(Error::StackUnderflow));
-            stack.push_back(a);
+            stack.push(a);
         },
     }
     Ok(())
