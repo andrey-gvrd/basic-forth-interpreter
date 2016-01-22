@@ -75,7 +75,7 @@ impl Forth {
 
     pub fn format_stack(&self) -> String {
         let mut stack_str = String::new();
-        for v in self.stack.iter() {
+        for v in &self.stack {
             stack_str.push_str(&v.to_string());
             stack_str.push_str(" ");
         }
@@ -124,7 +124,7 @@ impl Forth {
         let input_separated = to_space_separated(input_uppercased.clone());
         let input_split = input_separated.split_whitespace().collect::<Vec<&str>>();
 
-        for item_str in input_split.iter() {
+        for item_str in &input_split {
             match state {
                 ParseState::Normal => {
                     match self.str_to_item(item_str.clone().to_owned()) {
@@ -134,7 +134,7 @@ impl Forth {
                             if first_item == &Item::Symbol_(Symbol::Colon) {
                                 state = ParseState::CustomInit;
                             } else {
-                                for i in v.iter() {
+                                for i in &v {
                                     items.push_back((*i).clone());
                                 }
                             }
@@ -171,7 +171,7 @@ impl Forth {
                             } else {
                                 match self.word_map.get_mut(&curr_custom_word.clone()) {
                                     Some(w) => {
-                                        for i in v.iter() {
+                                        for i in &v {
                                             w.push_back((*i).clone());
                                         }
                                     },
