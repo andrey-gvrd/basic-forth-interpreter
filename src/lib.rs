@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 pub type Value = i32;
 pub type ForthResult = Result<(), Error>;
@@ -68,13 +69,7 @@ impl Forth {
     }
 
     pub fn format_stack(&self) -> String {
-        let mut stack_str = String::new();
-        for v in &self.stack {
-            stack_str.push_str(&v.to_string());
-            stack_str.push_str(" ");
-        }
-        stack_str = stack_str.trim().to_owned();
-        stack_str
+        StackFormat(self).to_string()
     }
 
     pub fn eval(&mut self, input: &str) -> ForthResult {
@@ -212,4 +207,19 @@ fn eval_command(stack: &mut Vec<Value>, c: StackWord) -> ForthResult {
 
 fn to_space_separated(s: &str) -> String {
     s.chars().map(|c| if c.is_control() { ' ' } else { c }).collect()
+}
+
+struct StackFormat<'a>(&'a Forth);
+
+impl<'a> fmt::Display for StackFormat<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some((head, tail)) = self.0.stack.split_first() {
+            try!(write!(f, "{}", head));
+
+            for v in tail {
+                try!(write!(f, " {}", v));
+            }
+        }
+        Ok(())
+    }
 }
