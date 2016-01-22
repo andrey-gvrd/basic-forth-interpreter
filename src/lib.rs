@@ -32,16 +32,16 @@ enum Exec {
 lazy_static! {
     static ref WORD_MAP: HashMap<String, VecDeque<Item>> = {
         let mut m = HashMap::new();
-        m.insert("DUP".to_owned(),  vec![Item::Exec_(Exec::Stack_(StackWord::Dup))].into_iter().collect());
-        m.insert("DROP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Drop))].into_iter().collect());
-        m.insert("SWAP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Swap))].into_iter().collect());
-        m.insert("OVER".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Over))].into_iter().collect());
-        m.insert("+".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Add))].into_iter().collect());
-        m.insert("-".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Sub))].into_iter().collect());
-        m.insert("*".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Mul))].into_iter().collect());
-        m.insert("/".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Div))].into_iter().collect());
-        m.insert(":".to_owned(),    vec![Item::Symbol_(Symbol::Colon)].into_iter().collect());
-        m.insert(";".to_owned(),    vec![Item::Symbol_(Symbol::SemiColon)].into_iter().collect());
+        m.insert("DUP".to_owned(),  [Item::Exec_(Exec::Stack_(StackWord::Dup))].iter().cloned().collect());
+        m.insert("DROP".to_owned(), [Item::Exec_(Exec::Stack_(StackWord::Drop))].iter().cloned().collect());
+        m.insert("SWAP".to_owned(), [Item::Exec_(Exec::Stack_(StackWord::Swap))].iter().cloned().collect());
+        m.insert("OVER".to_owned(), [Item::Exec_(Exec::Stack_(StackWord::Over))].iter().cloned().collect());
+        m.insert("+".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Add))].iter().cloned().collect());
+        m.insert("-".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Sub))].iter().cloned().collect());
+        m.insert("*".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Mul))].iter().cloned().collect());
+        m.insert("/".to_owned(),    [Item::Exec_(Exec::Arith_(ArithWord::Div))].iter().cloned().collect());
+        m.insert(":".to_owned(),    [Item::Symbol_(Symbol::Colon)].iter().cloned().collect());
+        m.insert(";".to_owned(),    [Item::Symbol_(Symbol::SemiColon)].iter().cloned().collect());
         m
     };
 }
@@ -181,7 +181,7 @@ impl Forth {
 
     fn str_to_item(&self, s: String) -> Result<VecDeque<Item>, Error> {
         match s.parse::<Value>() {
-            Ok(v) => Ok(vec![Item::Exec_(Exec::Value_(v))].into_iter().collect()),
+            Ok(v) => Ok([Item::Exec_(Exec::Value_(v))].iter().cloned().collect()),
             Err(_) => {
                 match self.word_map.get(&s.to_uppercase()) {
                     Some(w) => Ok((*w).clone()),
