@@ -133,9 +133,7 @@ impl Forth {
                             if first_item == &Item::Symbol_(Symbol::Colon) {
                                 state = ParseState::CustomInit;
                             } else {
-                                for i in &v {
-                                    items.push_back((*i).clone());
-                                }
+                                items.extend(v.iter().cloned());
                             }
                         },
                         Err(e) => return Err(e),
@@ -165,9 +163,7 @@ impl Forth {
                                 state = ParseState::Normal;
                             } else {
                                 if let Some(w) = self.word_map.get_mut(&curr_custom_word.clone()) {
-                                    for i in &v {
-                                        w.push_back((*i).clone());
-                                    }
+                                    w.extend(v.iter().cloned())
                                 }
                             }
                         },
