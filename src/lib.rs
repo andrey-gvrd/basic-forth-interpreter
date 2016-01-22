@@ -166,12 +166,7 @@ impl Forth {
     fn str_to_item(&self, s: String) -> Result<VecDeque<Item>, Error> {
         match s.parse::<Value>() {
             Ok(v) => Ok([Item::Exec_(Exec::Value_(v))].iter().cloned().collect()),
-            Err(_) => {
-                match self.word_map.get(&s.to_uppercase()) {
-                    Some(w) => Ok((*w).clone()),
-                    None    => Err(Error::UnknownWord),
-                }
-            }
+            Err(_) => self.word_map.get(&s.to_uppercase()).cloned().ok_or(Error::UnknownWord),
         }
     }
 }
@@ -193,10 +188,7 @@ fn eval_oper(a: Value, b: Value, o: ArithWord) -> Result<Value, Error> {
 fn eval_command(stack: &mut VecDeque<Value>, c: StackWord) -> ForthResult {
     match c {
         StackWord::Dup => {
-            let a = match stack.back() {
-                Some(&a) => a,
-                _ => return Err(Error::StackUnderflow),
-            };
+            let a = try!(stack.back().cloned().ok_or(Error::StackUnderflow));
             stack.push_back(a);
         },
         StackWord::Drop => {
@@ -215,10 +207,7 @@ fn eval_command(stack: &mut VecDeque<Value>, c: StackWord) -> ForthResult {
         StackWord::Over => {
             let len = stack.len();
             if len < 2 { return Err(Error::StackUnderflow) };
-            let a = match stack.get(len - 2) {
-                Some(&a) => a,
-                _ => return Err(Error::StackUnderflow),
-            };
+            let a = try!(stack.get(len - 2).cloned().ok_or(Error::StackUnderflow));
             stack.push_back(a);
         },
     }
