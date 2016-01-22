@@ -197,12 +197,13 @@ fn eval_command(stack: &mut VecDeque<Value>, c: StackWord) -> ForthResult {
             }
         },
         StackWord::Swap => {
-            let (a, b) = match (stack.pop_back(), stack.pop_back()) {
-                (Some(a), Some(b)) => (a, b),
+            match (stack.pop_back(), stack.pop_back()) {
+                (Some(a), Some(b)) => {
+                    stack.push_back(a);
+                    stack.push_back(b);
+                },
                 (_, _) => return Err(Error::StackUnderflow),
-            };
-            stack.push_back(a);
-            stack.push_back(b);
+            }
         },
         StackWord::Over => {
             let len = stack.len();
