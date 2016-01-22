@@ -87,8 +87,8 @@ impl Forth {
         match self.input_parse(input) {
             Ok(v) => {
                 for i in v.into_iter() {
-                    match i {
-                        Item::Exec_(s) => match s {
+                    if let Item::Exec_(s) = i {
+                        match s {
                             Exec::Arith_(o) => {
                                 let (a, b) = match (self.stack.pop_back(), self.stack.pop_back()) {
                                     (Some(a), Some(b)) => (a, b),
@@ -105,8 +105,7 @@ impl Forth {
                             Exec::Value_(v) => {
                                 self.stack.push_back(v);
                             },
-                        },
-                        _ => (),
+                        }
                     }
                 }
             },
@@ -144,16 +143,12 @@ impl Forth {
                 },
                 ParseState::CustomInit => {
                     // Cannot re-define numbers
-                    match self.str_to_item(item_str.clone().to_owned()) {
-                        Ok(v) => {
-                            let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
+                    if let Ok(v) = self.str_to_item(item_str.clone().to_owned()) {
+                        let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
 
-                            match first_item {
-                                &Item::Exec_(Exec::Value_(_)) => return Err(Error::InvalidWord),
-                                _ => (),
-                            }
-                        },
-                        _ => (),
+                        if let &Item::Exec_(Exec::Value_(_)) = first_item {
+                            return Err(Error::InvalidWord);
+                        }
                     }
 
                     curr_custom_word = item_str.clone().to_owned();
@@ -169,13 +164,10 @@ impl Forth {
                             if first_item == &Item::Symbol_(Symbol::SemiColon) {
                                 state = ParseState::Normal;
                             } else {
-                                match self.word_map.get_mut(&curr_custom_word.clone()) {
-                                    Some(w) => {
-                                        for i in &v {
-                                            w.push_back((*i).clone());
-                                        }
-                                    },
-                                    None => (),
+                                if let Some(w) = self.word_map.get_mut(&curr_custom_word.clone()) {
+                                    for i in &v {
+                                        w.push_back((*i).clone());
+                                    }
                                 }
                             }
                         },
@@ -228,9 +220,8 @@ fn eval_command(stack: &mut VecDeque<Value>, c: StackWord) -> ForthResult {
             stack.push_back(a);
         },
         StackWord::Drop => {
-            match stack.pop_back() {
-                Some(_) => (),
-                _ => return Err(Error::StackUnderflow),
+            if stack.pop_back().is_none() {
+                return Err(Error::StackUnderflow);
             }
         },
         StackWord::Swap => {
