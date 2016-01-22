@@ -114,7 +114,7 @@ impl Forth {
         for item_str in input_split {
             match state {
                 ParseState::Normal => {
-                    let v = try!(self.str_to_item(item_str.clone().to_owned()));
+                    let v = try!(self.str_to_item(item_str));
                     let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
                     if first_item == &Item::Symbol_(Symbol::Colon) {
@@ -125,7 +125,7 @@ impl Forth {
                 },
                 ParseState::CustomInit => {
                     // Cannot re-define numbers
-                    if let Ok(v) = self.str_to_item(item_str.clone().to_owned()) {
+                    if let Ok(v) = self.str_to_item(item_str) {
                         let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
                         if let &Item::Exec_(Exec::Value_(_)) = first_item {
@@ -139,7 +139,7 @@ impl Forth {
                     state = ParseState::Custom;
                 },
                 ParseState::Custom => {
-                    let v = try!(self.str_to_item(item_str.clone().to_owned()));
+                    let v = try!(self.str_to_item(item_str));
                     let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
                     if first_item == &Item::Symbol_(Symbol::SemiColon) {
@@ -157,7 +157,7 @@ impl Forth {
         }
     }
 
-    fn str_to_item(&self, s: String) -> Result<Vec<Item>, Error> {
+    fn str_to_item(&self, s: &str) -> Result<Vec<Item>, Error> {
         match s.parse::<Value>() {
             Ok(v) => Ok(vec![Item::Exec_(Exec::Value_(v))]),
             Err(_) => self.word_map.get(&s.to_uppercase()).cloned().ok_or(Error::UnknownWord),
