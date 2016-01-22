@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate lazy_static;
-
 use std::collections::HashMap;
 
 pub type Value = i32;
@@ -28,21 +25,19 @@ enum Exec {
     Value_(Value),
 }
 
-lazy_static! {
-    static ref WORD_MAP: HashMap<String, Vec<Item>> = {
-        let mut m = HashMap::new();
-        m.insert("DUP".to_owned(),  vec![Item::Exec_(Exec::Stack_(StackWord::Dup))]);
-        m.insert("DROP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Drop))]);
-        m.insert("SWAP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Swap))]);
-        m.insert("OVER".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Over))]);
-        m.insert("+".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Add))]);
-        m.insert("-".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Sub))]);
-        m.insert("*".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Mul))]);
-        m.insert("/".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Div))]);
-        m.insert(":".to_owned(),    vec![Item::Symbol_(Symbol::Colon)]);
-        m.insert(";".to_owned(),    vec![Item::Symbol_(Symbol::SemiColon)]);
-        m
-    };
+fn default_word_map() -> HashMap<String, Vec<Item>> {
+    let mut m = HashMap::new();
+    m.insert("DUP".to_owned(),  vec![Item::Exec_(Exec::Stack_(StackWord::Dup))]);
+    m.insert("DROP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Drop))]);
+    m.insert("SWAP".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Swap))]);
+    m.insert("OVER".to_owned(), vec![Item::Exec_(Exec::Stack_(StackWord::Over))]);
+    m.insert("+".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Add))]);
+    m.insert("-".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Sub))]);
+    m.insert("*".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Mul))]);
+    m.insert("/".to_owned(),    vec![Item::Exec_(Exec::Arith_(ArithWord::Div))]);
+    m.insert(":".to_owned(),    vec![Item::Symbol_(Symbol::Colon)]);
+    m.insert(";".to_owned(),    vec![Item::Symbol_(Symbol::SemiColon)]);
+    m
 }
 
 pub struct Forth {
@@ -67,7 +62,7 @@ enum ParseState {
 impl Forth {
     pub fn new() -> Forth {
         Forth {
-            word_map: WORD_MAP.clone(),
+            word_map: default_word_map(),
             stack: Vec::new(),
         }
     }
