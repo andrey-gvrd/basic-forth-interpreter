@@ -84,32 +84,26 @@ impl Forth {
     }
 
     pub fn eval(&mut self, input: &str) -> ForthResult {
-        match self.input_parse(input) {
-            Ok(v) => {
-                for i in v {
-                    if let Item::Exec_(s) = i {
-                        match s {
-                            Exec::Arith_(o) => {
-                                let (a, b) = match (self.stack.pop_back(), self.stack.pop_back()) {
-                                    (Some(a), Some(b)) => (a, b),
-                                    (_, _) => return Err(Error::StackUnderflow),
-                                };
-                                match eval_oper(a, b, o) {
-                                    Ok(v) => self.stack.push_back(v),
-                                    Err(e) => return Err(e),
-                                }
-                            },
-                            Exec::Stack_(c) => {
-                                try!(eval_command(&mut self.stack, c));
-                            },
-                            Exec::Value_(v) => {
-                                self.stack.push_back(v);
-                            },
-                        }
-                    }
+        let v = try!(self.input_parse(input));
+        for i in v {
+            if let Item::Exec_(s) = i {
+                match s {
+                    Exec::Arith_(o) => {
+                        let (a, b) = match (self.stack.pop_back(), self.stack.pop_back()) {
+                            (Some(a), Some(b)) => (a, b),
+                            (_, _) => return Err(Error::StackUnderflow),
+                        };
+                        let v = try!(eval_oper(a, b, o));
+                        self.stack.push_back(v);
+                    },
+                    Exec::Stack_(c) => {
+                        try!(eval_command(&mut self.stack, c));
+                    },
+                    Exec::Value_(v) => {
+                        self.stack.push_back(v);
+                    },
                 }
-            },
-            Err(e) => return Err(e),
+            }
         }
         Ok(())
     }
@@ -126,17 +120,13 @@ impl Forth {
         for item_str in &input_split {
             match state {
                 ParseState::Normal => {
-                    match self.str_to_item(item_str.clone().to_owned()) {
-                        Ok(v) => {
-                            let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
+                    let v = try!(self.str_to_item(item_str.clone().to_owned()));
+                    let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
 
-                            if first_item == &Item::Symbol_(Symbol::Colon) {
-                                state = ParseState::CustomInit;
-                            } else {
-                                items.extend(v.iter().cloned());
-                            }
-                        },
-                        Err(e) => return Err(e),
+                    if first_item == &Item::Symbol_(Symbol::Colon) {
+                        state = ParseState::CustomInit;
+                    } else {
+                        items.extend(v.iter().cloned());
                     }
                 },
                 ParseState::CustomInit => {
@@ -155,19 +145,13 @@ impl Forth {
                     state = ParseState::Custom;
                 },
                 ParseState::Custom => {
-                    match self.str_to_item(item_str.clone().to_owned()) {
-                        Ok(v) => {
-                            let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
+                    let v = try!(self.str_to_item(item_str.clone().to_owned()));
+                    let first_item = try!(v.back().clone().ok_or(Error::InvalidWord));
 
-                            if first_item == &Item::Symbol_(Symbol::SemiColon) {
-                                state = ParseState::Normal;
-                            } else {
-                                if let Some(w) = self.word_map.get_mut(&curr_custom_word.clone()) {
-                                    w.extend(v.iter().cloned())
-                                }
-                            }
-                        },
-                        Err(e) => return Err(e),
+                    if first_item == &Item::Symbol_(Symbol::SemiColon) {
+                        state = ParseState::Normal;
+                    } else if let Some(w) = self.word_map.get_mut(&curr_custom_word.clone()) {
+                        w.extend(v.iter().cloned())
                     }
                 },
             }
