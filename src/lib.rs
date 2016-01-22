@@ -103,15 +103,15 @@ impl Forth {
     }
 
     fn input_parse(&mut self, input: &str) -> Result<Vec<Item>, Error> {
-        let mut items: Vec<Item> = Vec::new();
+        let mut items = Vec::new();
         let mut state = ParseState::Normal;
         let mut curr_custom_word = String::new();
 
-        let input_uppercased = &input.to_uppercase() as &str;
-        let input_separated = to_space_separated(input_uppercased.clone());
-        let input_split = input_separated.split_whitespace().collect::<Vec<&str>>();
+        let input_uppercased = input.to_uppercase();
+        let input_separated = to_space_separated(&input_uppercased);
+        let input_split = input_separated.split_whitespace();
 
-        for item_str in &input_split {
+        for item_str in input_split {
             match state {
                 ParseState::Normal => {
                     let v = try!(self.str_to_item(item_str.clone().to_owned()));
