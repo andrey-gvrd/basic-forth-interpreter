@@ -7,22 +7,22 @@ use std::collections::VecDeque;
 pub type Value = i32;
 pub type ForthResult = Result<(), Error>;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum ArithWord { Add, Sub, Mul, Div }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum StackWord { Dup, Drop, Swap, Over }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum Symbol { Colon, SemiColon }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum Item {
     Exec_(Exec),
     Symbol_(Symbol),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum Exec {
     Arith_(ArithWord),
     Stack_(StackWord),
