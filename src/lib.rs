@@ -106,16 +106,22 @@ impl Forth {
         let input_separated = to_space_separated(&input_uppercased);
         let input_split = input_separated.split_whitespace();
 
+        let first_item_is = |items: &[_], expected| {
+            match items.last() {
+                Some(&actual) => Ok(actual == expected),
+                None => Err(Error::InvalidWord),
+            }
+        };
+
         for item_str in input_split {
             match state {
                 ParseState::Normal => {
                     let v = try!(self.str_to_item(item_str));
-                    let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
-                    if first_item == &Item::Symbol_(Symbol::Colon) {
+                    if try!(first_item_is(&v, Item::Symbol_(Symbol::Colon))) {
                         state = ParseState::CustomInit;
                     } else {
-                        items.extend(v.iter().cloned());
+                        items.extend(v);
                     }
                 },
                 ParseState::CustomInit => {
@@ -136,12 +142,11 @@ impl Forth {
                 },
                 ParseState::Custom => {
                     let v = try!(self.str_to_item(item_str));
-                    let first_item = try!(v.last().clone().ok_or(Error::InvalidWord));
 
-                    if first_item == &Item::Symbol_(Symbol::SemiColon) {
+                    if try!(first_item_is(&v, Item::Symbol_(Symbol::SemiColon))) {
                         state = ParseState::Normal;
                     } else if let Some(w) = self.word_map.get_mut(curr_custom_word.as_ref().unwrap()) {
-                        w.extend(v.iter().cloned())
+                        w.extend(v);
                     }
                 },
             }
